@@ -17,7 +17,7 @@ def send_data():
             print("Sent data:", data, "Status:", response.status_code)
         except Exception as e:
             print("Error sending data:", e)
-        time.sleep(5)  # Send data every 5 seconds
+        time.sleep(5000)  # Send data every 5 seconds
 
 # Run the simulation
 if __name__ == "__main__":
