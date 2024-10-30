@@ -1,25 +1,22 @@
 const express = require('express');
-const bodyParser = require('body-parser');
-
+const cors = require('cors');
 const app = express();
 const port = 3000;
 
-app.use(bodyParser.json());
+app.use(cors());
+app.use(express.json());
 
 let sensorData = [];
 
-// Endpoint to receive data
 app.post('/api/sensors', (req, res) => {
-    const { light, moisture, temperature } = req.body;
+    const { plant_id, light, moisture, temperature } = req.body;
     const timestamp = new Date();
-    sensorData.push({ light, moisture, temperature, timestamp });
-    console.log("Data received:", req.body);
+    sensorData.push({ plant_id, light, moisture, temperature, timestamp });
     res.status(201).send({ message: "Data stored" });
 });
 
-// Endpoint to get all data (for testing)
 app.get('/api/sensors', (req, res) => {
-    res.send(sensorData);
+    res.json(sensorData);
 });
 
 app.listen(port, () => {
