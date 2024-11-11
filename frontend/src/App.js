@@ -22,7 +22,7 @@ function App() {
         };
 
         fetchData();
-        const interval = setInterval(fetchData, 5000);
+        const interval = setInterval(fetchData,300000); // Fetch data every 5 minutes (300,000 ms)
 
         return () => clearInterval(interval);
     }, []);
@@ -60,7 +60,7 @@ function App() {
 
     return (
         <div className="container my-5">
-            <h1 className="text-center mb-4">🌱 Smart Garden Dashboard</h1>
+            <h1 className="text-center mb-4">🌱 Smart Garden Dashboard!!!</h1>
 
             <ul className="nav nav-tabs justify-content-center mb-4">
                 <li className="nav-item">

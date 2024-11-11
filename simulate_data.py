@@ -1,25 +1,35 @@
-import random
+import json
 import time
-import requests
+import random
+from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
 
-def simulate_data(plant_id):
-    light = random.randint(0, 100)
-    moisture = random.randint(0, 100)
-    temperature = round(random.uniform(15, 35), 2)
-    return {"plant_id": plant_id, "light": light, "moisture": moisture, "temperature": temperature}
+# Initialize the MQTT Client
+client = AWSIoTMQTTClient("SimulatedPiClient")
+client.configureEndpoint("a1jdknvzevt8bn-ats.iot.us-east-1.amazonaws.com", 8883)
+client.configureCredentials(
+    "/Users/andreymarchuk/Downloads/awsIoT/root-ca.pem",
+    "/Users/andreymarchuk/Downloads/awsIoT/private.pem.key",
+    "/Users/andreymarchuk/Downloads/awsIoT/certificate.pem.crt"
+)
 
-def send_data():
-    url = "http://localhost:3000/api/sensors"  # Ensure this matches your backend port
-    plant_ids = ["Plant 1", "Plant 2", "Plant 3"]  # Three plant identifiers
+client.configureConnectDisconnectTimeout(10)  # 10 seconds
+client.configureMQTTOperationTimeout(5)       # 5 seconds
+
+# Connect to AWS IoT Core
+try:
+    client.connect()
+    print("Connected to AWS IoT Core.")
+
+    # Simulate and publish sensor data
     while True:
-        for plant_id in plant_ids:
-            data = simulate_data(plant_id)
-            try:
-                response = requests.post(url, json=data)
-                print("Sent data:", data, "Status:", response.status_code)
-            except Exception as e:
-                print("Error sending data:", e)
-        time.sleep(10)
+        data = {
+            'temperature': round(random.uniform(15, 30), 2),
+            'humidity': round(random.uniform(30, 70), 2),
+            'timestamp': time.time()
+        }
+        client.publish("smart/garden/sensor", json.dumps(data), 1)
+        print(f"Published: {data}")
+        time.sleep(5)  # Publish every 5 seconds
 
-if __name__ == "__main__":
-    send_data()
+except Exception as e:
+    print(f"Failed to connect or publish: {e}")

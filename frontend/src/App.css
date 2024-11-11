@@ -1,0 +1,48 @@
+/* App.css */
+
+body {
+  font-family: "Arial", sans-serif;
+  background-color: #f8f9fa;
+  color: #333;
+}
+
+.main-title {
+  font-size: 2.5em;
+  color: #495057;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.nav-tabs .nav-link {
+  color: #495057;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+}
+
+.nav-tabs .nav-link.active {
+  color: #fff;
+  background-color: #007bff;
+  border-color: #007bff;
+}
+
+.modern-btn {
+  border-radius: 20px;
+  padding: 0.5rem 1.5rem;
+  font-weight: 600;
+}
+
+.modern-card {
+  border-radius: 12px;
+  background-color: #fff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s;
+}
+
+.modern-card:hover {
+  transform: scale(1.02);
+}
+
+.section-title {
+  color: #007bff;
+  font-weight: bold;
+}
