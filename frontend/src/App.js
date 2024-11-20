@@ -8,6 +8,7 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, T
 function App() {
     const [sensorData, setSensorData] = useState([]);
     const [notifications, setNotifications] = useState([]);
+    const [schedulerNotifications, setSchedulerNotifications] = useState([]); // Scheduler notifications
     const [showNotifications, setShowNotifications] = useState(false);
     const [expandedPlants, setExpandedPlants] = useState({});
     const [activeTab, setActiveTab] = useState("Dashboard");
@@ -25,8 +26,24 @@ function App() {
             }
         };
 
+        const fetchSchedulerNotifications = async () => {
+            try {
+                const response = await fetch('http://localhost:3000/api/scheduled-notifications');
+                const data = await response.json();
+                setSchedulerNotifications(data);
+            } catch (error) {
+                console.error('Error fetching scheduled notifications:', error);
+            }
+        };
+
         fetchData();
-        const interval = setInterval(fetchData, 300000); // Fetch every 5 minutes
+        fetchSchedulerNotifications();
+
+        const interval = setInterval(() => {
+            fetchData();
+            fetchSchedulerNotifications();
+        }, 300000); // Fetch every 5 minutes
+
         return () => clearInterval(interval);
     }, []);
 
@@ -101,22 +118,31 @@ function App() {
                 {showNotifications && (
                     <div className="notifications mt-3 p-3 rounded shadow-sm">
                         <h4>Notifications</h4>
-                        {notifications.length > 0 ? (
-                            <ul className="list-group">
-                                {notifications.map((note, index) => (
-                                    <li key={index} className={`list-group-item ${note.type === 'Flood Alert'
-                                        ? 'list-group-item-danger'
-                                        : note.type === 'Extreme Weather'
-                                            ? 'list-group-item-warning'
-                                            : 'list-group-item-info'
-                                        }`}>
-                                        <strong>{note.type}:</strong> {note.message}
-                                    </li>
-                                ))}
-                            </ul>
-                        ) : (
+                        {notifications.length === 0 && schedulerNotifications.length === 0 && (
                             <p className="text-muted">No notifications at the moment.</p>
                         )}
+                        <ul className="list-group">
+                            {/* Regular Notifications */}
+                            {notifications.map((note, index) => (
+                                <li key={index} className={`list-group-item ${note.type === 'Flood Alert'
+                                    ? 'list-group-item-danger'
+                                    : note.type === 'Extreme Weather'
+                                        ? 'list-group-item-warning'
+                                        : 'list-group-item-info'
+                                    }`}>
+                                    <strong>{note.type}:</strong> {note.message}
+                                </li>
+                            ))}
+
+                            {/* Scheduler Notifications */}
+                            {schedulerNotifications.map((note, index) => (
+                                <li key={index} className="list-group-item list-group-item-warning">
+                                    <strong>{note.type}:</strong> {note.message}
+                                    <br />
+                                    <small className="text-muted">{new Date(note.timestamp).toLocaleString()}</small>
+                                </li>
+                            ))}
+                        </ul>
                     </div>
                 )}
             </div>
@@ -135,7 +161,7 @@ function App() {
                 ))}
             </ul>
 
-            {/* Dashboard View */}
+            {/* Dashboard and Graph Views */}
             {activeTab === "Dashboard" && (
                 <>
                     <div className="d-flex justify-content-center flex-wrap mb-4">
@@ -172,7 +198,6 @@ function App() {
                 </>
             )}
 
-            {/* Graph View */}
             {activeTab === "Graph" && (
                 <div className="text-center">
                     <h3>Graphs for Selected Plants</h3>
