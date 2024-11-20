@@ -23,8 +23,9 @@ try:
     # Simulate and publish sensor data
     while True:
         data = {
+            'light': round(random.uniform(0, 100), 2),
+            'moisture': round(random.uniform(0, 100), 2),
             'temperature': round(random.uniform(15, 30), 2),
-            'humidity': round(random.uniform(30, 70), 2),
             'timestamp': time.time()
         }
         client.publish("smart/garden/sensor", json.dumps(data), 1)
