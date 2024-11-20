@@ -46,3 +46,22 @@ body {
   color: #007bff;
   font-weight: bold;
 }
+
+.notification {
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 5px;
+    color: #fff;
+}
+
+.notification.flood-alert {
+    background-color: #ff4d4d;
+}
+
+.notification.water-needed {
+    background-color: #4caf50;
+}
+
+.notification.extreme-weather-warning {
+    background-color: #ff9f1c;
+}

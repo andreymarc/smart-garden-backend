@@ -48,21 +48,45 @@ const connection = client.new_connection(config);
         console.log('Connected to AWS IoT Core');
 
         await connection.subscribe('smart/garden/sensor', mqtt.QoS.AtLeastOnce, (topic, payload) => {
-            try {
-                const payloadString = new TextDecoder('utf-8').decode(payload);
-                const data = JSON.parse(payloadString);
-                console.log('Received message:', data);
+    try {
+        const payloadString = new TextDecoder('utf-8').decode(payload);
+        const data = JSON.parse(payloadString);
+        console.log('Received message:', data);
 
-                const sensorEntry = {
-                    plant_id: 'Plant 1',
-                    ...data,
-                    timestamp: new Date(data.timestamp * 1000)
-                };
-                sensorData.push(sensorEntry);
-            } catch (error) {
-                console.error('Error processing message:', error);
-            }
-        });
+        const sensorEntry = {
+            plant_id: 'Plant 1',
+            ...data,
+            timestamp: new Date(data.timestamp * 1000)
+        };
+        sensorData.push(sensorEntry);
+
+        // **Notification Logic**
+        const notifications = [];
+        if (data.moisture > 90) {
+            notifications.push({
+                type: 'Flood Alert',
+                message: 'High moisture levels detected. Risk of flooding!'
+            });
+        }
+        if (data.temperature > 40) {
+            notifications.push({
+                type: 'Extreme Weather Warning',
+                message: 'Extreme temperature detected.'
+            });
+        }
+        if (data.moisture < 20) {
+            notifications.push({
+                type: 'Water Needed',
+                message: 'Plant needs water. Low moisture levels detected.'
+            });
+        }
+
+        console.log('Generated Notifications from MQTT:', notifications);
+    } catch (error) {
+        console.error('Error processing message:', error);
+    }
+});
+
 
     } catch (error) {
         console.error('Connection error:', error);
@@ -87,10 +111,72 @@ app.post('/api/sensors', (req, res) => {
             console.error('Error inserting data:', error);
             res.status(500).send({ message: 'Database insertion failed' });
         } else {
-            res.status(201).send({ message: 'Data stored in database' });
+            // **Notification Logic**
+            const notifications = [];
+
+            // Flood Alert
+            if (moisture > 90) {
+                notifications.push({
+                    type: 'Flood Alert',
+                    message: `High moisture levels detected for ${plant_id}. Risk of flooding!`
+                });
+            }
+
+            // Extreme Weather Warning
+            if (temperature > 40) {
+                notifications.push({
+                    type: 'Extreme Weather Warning',
+                    message: `Extreme temperature detected for ${plant_id}. Current temperature: ${temperature}°C.`
+                });
+            }
+
+            // Water Needed
+            if (moisture < 20) {
+                notifications.push({
+                    type: 'Water Needed',
+                    message: `Plant ${plant_id} needs water. Low moisture levels detected.`
+                });
+            }
+
+            console.log('Generated Notifications:', notifications);
+
+            res.status(201).send({
+                message: 'Data stored in database',
+                notifications: notifications
+            });
         }
     });
+
+    app.get('/api/notifications', (req, res) => {
+    const notifications = [];
+
+    // Analyze the in-memory data for notifications
+    sensorData.forEach(({ plant_id, light, moisture, temperature }) => {
+        if (moisture > 90) {
+            notifications.push({
+                type: 'Flood Alert',
+                message: `High moisture levels detected for ${plant_id}. Risk of flooding!`
+            });
+        }
+        if (temperature > 40) {
+            notifications.push({
+                type: 'Extreme Weather Warning',
+                message: `Extreme temperature detected for ${plant_id}.`
+            });
+        }
+        if (moisture < 20) {
+            notifications.push({
+                type: 'Water Needed',
+                message: `Plant ${plant_id} needs water. Low moisture levels detected.`
+            });
+        }
+    });
+
+    res.json(notifications);
 });
+
+});
+
 
 app.get('/api/sensors', (req, res) => {
     res.json(sensorData);
