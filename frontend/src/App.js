@@ -1,17 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { Line } from 'react-chartjs-2';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { Chart as ChartJS, LineElement, CategoryScale, LinearScale, PointElement, Title, Tooltip, Legend } from 'chart.js';
-import './App.css'; // Custom CSS for modern styles
+import { Line } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 
-ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Title, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 function App() {
     const [sensorData, setSensorData] = useState([]);
     const [notifications, setNotifications] = useState([]);
-    const [selectedPlant, setSelectedPlant] = useState("Plant 1");
+    const [showNotifications, setShowNotifications] = useState(false);
+    const [expandedPlants, setExpandedPlants] = useState({});
     const [activeTab, setActiveTab] = useState("Dashboard");
 
+    // Fetch sensor data from backend
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -33,17 +34,6 @@ function App() {
         light: { low: 20, high: 80 },
         moisture: { low: 30, high: 70 },
         temperature: { low: 15, high: 30 },
-    };
-
-    const generateRecommendations = ({ light, moisture, temperature }) => {
-        const recommendations = [];
-        if (light < thresholds.light.low) recommendations.push("Move to a brighter area.");
-        if (light > thresholds.light.high) recommendations.push("Reduce exposure to direct light.");
-        if (moisture < thresholds.moisture.low) recommendations.push("Water the plant.");
-        if (moisture > thresholds.moisture.high) recommendations.push("Allow soil to dry out a bit.");
-        if (temperature < thresholds.temperature.low) recommendations.push("Move to a warmer location.");
-        if (temperature > thresholds.temperature.high) recommendations.push("Move to a cooler location.");
-        return recommendations;
     };
 
     const generateNotifications = (data) => {
@@ -71,37 +61,63 @@ function App() {
         setNotifications(newNotifications);
     };
 
-    const filteredData = sensorData.filter(entry => entry.plant_id === selectedPlant);
+    const togglePlantData = (plant) => {
+        setExpandedPlants((prev) => ({
+            ...prev,
+            [plant]: !prev[plant],
+        }));
+    };
 
-    const createChartData = (key) => ({
-        labels: filteredData.map(entry => new Date(entry.timestamp).toLocaleTimeString()),
-        datasets: [{
-            label: key.charAt(0).toUpperCase() + key.slice(1),
-            data: filteredData.map(entry => entry[key]),
-            fill: false,
-            backgroundColor: key === 'light' ? '#007bff' : key === 'moisture' ? '#28a745' : '#ffc107',
-            borderColor: key === 'light' ? '#007bff' : key === 'moisture' ? '#28a745' : '#ffc107',
-            tension: 0.4,
-        }],
-    });
+    const createChartData = (key, plant) => {
+        const filteredData = sensorData.filter(entry => entry.plant_id === plant);
+        return {
+            labels: filteredData.map(entry => new Date(entry.timestamp).toLocaleTimeString()),
+            datasets: [
+                {
+                    label: key.charAt(0).toUpperCase() + key.slice(1),
+                    data: filteredData.map(entry => entry[key]),
+                    borderColor: key === 'light' ? '#007bff' : key === 'moisture' ? '#28a745' : '#ffc107',
+                    backgroundColor: key === 'light' ? '#007bff' : key === 'moisture' ? '#28a745' : '#ffc107',
+                    tension: 0.4,
+                    fill: false,
+                },
+            ],
+        };
+    };
 
     return (
         <div className="container my-5">
             <h1 className="text-center mb-4">🌱 Smart Garden Dashboard</h1>
 
             {/* Notifications Section */}
-            <div className="notifications mb-4 p-3 rounded shadow-sm">
-                <h4>Notifications</h4>
-                {notifications.length > 0 ? (
-                    <ul className="list-group">
-                        {notifications.map((note, index) => (
-                            <li key={index} className={`list-group-item ${note.type === 'Flood Alert' ? 'list-group-item-danger' : note.type === 'Extreme Weather' ? 'list-group-item-warning' : 'list-group-item-info'}`}>
-                                <strong>{note.type}:</strong> {note.message}
-                            </li>
-                        ))}
-                    </ul>
-                ) : (
-                    <p className="text-muted">No notifications at the moment.</p>
+            <div className="mb-4">
+                <button
+                    className="btn btn-outline-primary"
+                    onClick={() => setShowNotifications(!showNotifications)}
+                >
+                    {showNotifications ? "Hide Notifications" : "Show Notifications"}
+                </button>
+
+                {showNotifications && (
+                    <div className="notifications mt-3 p-3 rounded shadow-sm">
+                        <h4>Notifications</h4>
+                        {notifications.length > 0 ? (
+                            <ul className="list-group">
+                                {notifications.map((note, index) => (
+                                    <li key={index} className={`list-group-item ${note.type === 'Flood Alert'
+                                        ? 'list-group-item-danger'
+                                        : note.type === 'Extreme Weather'
+                                            ? 'list-group-item-warning'
+                                            : 'list-group-item-info'
+                                        }`}>
+                                        <strong>{note.type}:</strong> {note.message}
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p className="text-muted">No notifications at the moment.</p>
+                        )}
+                    </div>
                 )}
             </div>
 
@@ -124,42 +140,34 @@ function App() {
                 <>
                     <div className="d-flex justify-content-center flex-wrap mb-4">
                         {["Plant 1", "Plant 2", "Plant 3"].map((plant) => (
-                            <button
-                                key={plant}
-                                className={`btn btn-${selectedPlant === plant ? 'primary' : 'secondary'} m-2`}
-                                onClick={() => setSelectedPlant(plant)}
-                            >
-                                {plant}
-                            </button>
-                        ))}
-                    </div>
+                            <div key={plant} className="mb-3 w-100">
+                                <button
+                                    className="btn btn-primary w-100"
+                                    onClick={() => togglePlantData(plant)}
+                                >
+                                    {expandedPlants[plant] ? `Hide ${plant} Data` : `Show ${plant} Data`}
+                                </button>
 
-                    <div className="row">
-                        {filteredData.length > 0 ? (
-                            filteredData.map((entry, index) => (
-                                <div key={index} className="col-12 col-md-6 col-lg-4 mb-3">
-                                    <div className="card shadow-sm p-3 border-0 rounded">
-                                        <h5 className="text-center">{entry.plant_id}</h5>
-                                        <p><strong>🌞 Light:</strong> {entry.light}</p>
-                                        <p><strong>💧 Moisture:</strong> {entry.moisture}</p>
-                                        <p><strong>🌡 Temperature:</strong> {entry.temperature} °C</p>
-                                        <p className="text-muted">
-                                            <small><strong>Timestamp:</strong> {new Date(entry.timestamp).toLocaleString()}</small>
-                                        </p>
-                                        <div>
-                                            <strong>Recommendations:</strong>
-                                            <ul>
-                                                {generateRecommendations(entry).map((rec, i) => (
-                                                    <li key={i}>{rec}</li>
-                                                ))}
-                                            </ul>
-                                        </div>
+                                {expandedPlants[plant] && (
+                                    <div className="mt-3">
+                                        {sensorData.filter(entry => entry.plant_id === plant).length > 0 ? (
+                                            sensorData.filter(entry => entry.plant_id === plant).map((entry, index) => (
+                                                <div key={index} className="card shadow-sm p-3 mb-3">
+                                                    <p><strong>🌞 Light:</strong> {entry.light}</p>
+                                                    <p><strong>💧 Moisture:</strong> {entry.moisture}</p>
+                                                    <p><strong>🌡 Temperature:</strong> {entry.temperature} °C</p>
+                                                    <p className="text-muted">
+                                                        <small><strong>Timestamp:</strong> {new Date(entry.timestamp).toLocaleString()}</small>
+                                                    </p>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <p className="text-center text-muted">No data available for {plant}</p>
+                                        )}
                                     </div>
-                                </div>
-                            ))
-                        ) : (
-                            <p className="text-center">No data available for {selectedPlant}</p>
-                        )}
+                                )}
+                            </div>
+                        ))}
                     </div>
                 </>
             )}
@@ -167,15 +175,15 @@ function App() {
             {/* Graph View */}
             {activeTab === "Graph" && (
                 <div className="text-center">
-                    <h3>Graphs for {selectedPlant}</h3>
-                    <div className="row">
-                        {["light", "moisture", "temperature"].map((key) => (
-                            <div key={key} className="col-12 col-md-6 mb-4">
-                                <h5>{key.charAt(0).toUpperCase() + key.slice(1)} Levels</h5>
-                                <Line data={createChartData(key)} />
-                            </div>
-                        ))}
-                    </div>
+                    <h3>Graphs for Selected Plants</h3>
+                    {["Plant 1", "Plant 2", "Plant 3"].map(plant => (
+                        <div key={plant} className="mb-4">
+                            <h5>{plant}</h5>
+                            <Line data={createChartData('light', plant)} />
+                            <Line data={createChartData('moisture', plant)} />
+                            <Line data={createChartData('temperature', plant)} />
+                        </div>
+                    ))}
                 </div>
             )}
         </div>

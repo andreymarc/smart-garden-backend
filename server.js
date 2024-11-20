@@ -177,6 +177,61 @@ app.post('/api/sensors', (req, res) => {
 
 });
 
+const cron = require('node-cron');
+
+// A simulated storage for scheduled notifications (you can replace this with database integration)
+let scheduledNotifications = [];
+
+// Scheduler for fertilizer alerts (every three months)
+// cron.schedule('0 0 1 */3 *', () => { // Runs at midnight on the 1st day of every 3rd month
+//     console.log('Scheduler: Time to add fertilizer for all plants!');
+//     scheduledNotifications.push({
+//         type: 'Fertilizer Reminder',
+//         message: 'It’s time to add fertilizer to your plants.',
+//         timestamp: new Date(),
+//     });
+// });
+
+
+
+
+// Scheduler for changing planting medium (every six months)
+// cron.schedule('0 0 1 */6 *', () => { // Runs at midnight on the 1st day of every 6th month
+//     console.log('Scheduler: Time to change the planting medium for all plants!');
+//     scheduledNotifications.push({
+//         type: 'Planting Medium Reminder',
+//         message: 'It’s time to change the planting medium for your plants.',
+//         timestamp: new Date(),
+//     });
+// });
+
+cron.schedule('* * * * *', () => { // Runs every minute
+    const notification = {
+        type: 'Fertilizer Reminder',
+        message: 'It’s time to add fertilizer to your plants.',
+        timestamp: new Date(),
+    };
+    scheduledNotifications.push(notification);
+    console.log('Scheduler: New Fertilizer Reminder Added:', notification);
+});
+
+// Scheduler for planting medium change reminders (every 2 minutes for testing)
+cron.schedule('*/2 * * * *', () => { // Runs every 2 minutes
+    const notification = {
+        type: 'Planting Medium Reminder',
+        message: 'It’s time to change the planting medium for your plants.',
+        timestamp: new Date(),
+    };
+    scheduledNotifications.push(notification);
+    console.log('Scheduler: New Planting Medium Reminder Added:', notification);
+});
+
+// API to fetch scheduled notifications
+app.get('/api/scheduled-notifications', (req, res) => {
+    res.json(scheduledNotifications);
+});
+
+
 
 app.get('/api/sensors', (req, res) => {
     res.json(sensorData);
