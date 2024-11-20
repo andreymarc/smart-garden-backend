@@ -8,12 +8,19 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, T
 function App() {
     const [sensorData, setSensorData] = useState([]);
     const [notifications, setNotifications] = useState([]);
-    const [schedulerNotifications, setSchedulerNotifications] = useState([]); // Scheduler notifications
+    const [schedulerNotifications, setSchedulerNotifications] = useState([]);
     const [showNotifications, setShowNotifications] = useState(false);
     const [expandedPlants, setExpandedPlants] = useState({});
     const [activeTab, setActiveTab] = useState("Dashboard");
+    const [weather, setWeather] = useState(null); // Store weather data
 
-    // Fetch sensor data from backend
+    const thresholds = {
+        light: { low: 20, high: 80 },
+        moisture: { low: 30, high: 70 },
+        temperature: { low: 15, high: 30 },
+    };
+
+    // Fetch sensor data and weather data
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -36,22 +43,32 @@ function App() {
             }
         };
 
+        const fetchWeather = async () => {
+            try {
+                const apiKey = 'a4ad2ad2ef48415f75761fe3bfa19661';
+; // Replace with your OpenWeatherMap API key
+                const response = await fetch(
+                    `https://api.openweathermap.org/data/2.5/forecast?q=Tel-Aviv&units=metric&appid=${apiKey}`
+                );
+                const data = await response.json();
+                setWeather(data);
+            } catch (error) {
+                console.error('Error fetching weather data:', error);
+            }
+        };
+
         fetchData();
         fetchSchedulerNotifications();
+        fetchWeather();
 
         const interval = setInterval(() => {
             fetchData();
             fetchSchedulerNotifications();
+            fetchWeather();
         }, 300000); // Fetch every 5 minutes
 
         return () => clearInterval(interval);
     }, []);
-
-    const thresholds = {
-        light: { low: 20, high: 80 },
-        moisture: { low: 30, high: 70 },
-        temperature: { low: 15, high: 30 },
-    };
 
     const generateNotifications = (data) => {
         const newNotifications = [];
@@ -75,6 +92,17 @@ function App() {
                 });
             }
         });
+
+        if (weather && weather.list) {
+            const rainForecast = weather.list.find((entry) => entry.weather[0].main === 'Rain');
+            if (rainForecast) {
+                newNotifications.push({
+                    type: 'Rain Alert',
+                    message: `Rain expected tomorrow. Skip watering.`,
+                });
+            }
+        }
+
         setNotifications(newNotifications);
     };
 
@@ -105,6 +133,20 @@ function App() {
     return (
         <div className="container my-5">
             <h1 className="text-center mb-4">🌱 Smart Garden Dashboard</h1>
+
+            {/* Weather Section */}
+            {weather && weather.city && (
+                <div className="weather-alert mb-4 p-3 rounded shadow-sm bg-info text-white">
+                    <h4>🌤️ Weather Forecast</h4>
+                    <p>
+                        <strong>Location:</strong> {weather.city.name}
+                    </p>
+                    <p>
+                        <strong>Next 3 Hours:</strong>{' '}
+                        {weather.list[0].weather[0].description}, {weather.list[0].main.temp}°C
+                    </p>
+                </div>
+            )}
 
             {/* Notifications Section */}
             <div className="mb-4">
