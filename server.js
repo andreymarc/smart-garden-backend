@@ -17,9 +17,9 @@ let scheduledNotifications = [];
 
 // Database connection
 const dbConnection = mysql.createConnection({
-    host: 'smart-garden-db.c1gc4q2uet6b.us-east-1.rds.amazonaws.com',
+    host: 'smart-garden-db',
     user: 'admin',
-    password: '0523670072',
+    password: 'secret_number',
     database: 'smart_garden_db',
 });
 
